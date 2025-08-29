@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自律助手 - 追踪你的努力</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- 配置Tailwind自定义颜色 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .progress-animation {
+                transition: width 1s ease-in-out;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fa fa-line-chart text-primary text-2xl mr-2"></i>
+                        <span class="text-xl font-bold text-dark">自律助手</span>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <button id="helpBtn" class="p-2 rounded-md text-gray-600 hover:text-primary hover:bg-gray-100 transition duration-150 ease-in-out">
+                        <i class="fa fa-question-circle text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 欢迎信息 -->
+        <div class="text-center mb-10">
+            <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-dark mb-2">追踪你的努力，见证你的成长</h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">记录每日任务，获取AI评分，可视化你的努力过程，让自律变得更简单</p>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- 任务输入卡片 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 transform transition duration-300 hover:shadow-xl">
+                <h2 class="text-xl font-bold text-dark mb-4 flex items-center">
+                    <i class="fa fa-tasks text-primary mr-2"></i>记录今日任务
+                </h2>
+                
+                <form id="taskForm" class="space-y-4">
+                    <!-- 任务类型选择 -->
+                    <div>
+                        <label for="taskType" class="block text-sm font-medium text-gray-700 mb-1">任务类型</label>
+                        <select id="taskType" name="taskType" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out">
+                            <option value="" disabled selected>请选择任务类型</option>
+                            <optgroup label="学习">
+                                <option value="学习 - 背单词">背单词</option>
+                                <option value="学习 - 阅读">阅读</option>
+                                <option value="学习 - 写作">写作</option>
+                                <option value="学习 - 编程">编程</option>
+                                <option value="学习 - 复习">复习</option>
+                            </optgroup>
+                            <optgroup label="工作">
+                                <option value="工作 - 写报告">写报告</option>
+                                <option value="工作 - 会议">会议</option>
+                                <option value="工作 - 项目开发">项目开发</option>
+                                <option value="工作 - 客户沟通">客户沟通</option>
+                            </optgroup>
+                            <optgroup label="健康">
+                                <option value="健康 - 跑步">跑步</option>
+                                <option value="健康 - 健身">健身</option>
+                                <option value="健康 - 瑜伽">瑜伽</option>
+                                <option value="健康 - 冥想">冥想</option>
+                            </optgroup>
+                            <optgroup label="其他">
+                                <option value="其他 - 家务">家务</option>
+                                <option value="其他 - 兴趣爱好">兴趣爱好</option>
+                                <option value="其他 - 志愿服务">志愿服务</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    
+                    <!-- 努力描述 -->
+                    <div>
+                        <label for="effortDescription" class="block text-sm font-medium text-gray-700 mb-1">
+                            今天为这件事花了多久 / 做了什么？
+                        </label>
+                        <input type="text" id="effortDescription" name="effortDescription" required
+                            placeholder="例如：花1小时背完30个单词"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out">
+                    </div>
+                    
+                    <!-- 能力描述 -->
+                    <div>
+                        <label for="abilityDescription" class="block text-sm font-medium text-gray-700 mb-1">
+                            你觉得自己在这件事上的能力有进步吗？
+                        </label>
+                        <input type="text" id="abilityDescription" name="abilityDescription" required
+                            placeholder="例如：比昨天记得牢，有进步"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out">
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out flex items-center justify-center">
+                        <i class="fa fa-paper-plane mr-2"></i>提交并获取评分
+                    </button>
+                </form>
+                
+                <!-- 评分结果区域 -->
+                <div id="scoreResult" class="mt-6 hidden">
+                    <div class="border-t pt-4">
+                        <h3 class="font-semibold text-gray-800 mb-3">AI评分结果</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <p class="text-sm text-blue-700">努力程度</p>
+                                <p id="effortScore" class="text-2xl font-bold text-primary">8分</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <p class="text-sm text-green-700">能力进步</p>
+                                <p id="abilityScore" class="text-2xl font-bold text-secondary">7分</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 用户调整分数 -->
+                        <div class="mt-4">
+                            <label for="userAdjustedScore" class="block text-sm font-medium text-gray-700 mb-1">
+                                你觉得这个评分准确吗？可以调整努力程度分数：
+                            </label>
+                            <div class="flex items-center">
+                                <input type="range" id="userAdjustedScore" min="1" max="10" value="8"
+                                    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary">
+                                <span id="adjustedScoreValue" class="ml-3 text-lg font-medium text-gray-800">8</span>
+                            </div>
+                            <button id="saveAdjustment" class="mt-2 text-sm bg-accent hover:bg-accent/90 text-white px-3 py-1 rounded transition duration-150 ease-in-out">
+                                保存调整
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 可视化卡片 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 transform transition duration-300 hover:shadow-xl">
+                <h2 class="text-xl font-bold text-dark mb-6 flex items-center">
+                    <i class="fa fa-bar-chart text-primary mr-2"></i>你的努力趋势
+                </h2>
+                
+                <!-- 周努力趋势图 -->
+                <div class="mb-8">
+                    <h3 class="font-semibold text-gray-800 mb-3">本周努力趋势</h3>
+                    <div class="h-64">
+                        <canvas id="weeklyTrendChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 努力累计条 -->
+                <div>
+                    <h3 class="font-semibold text-gray-800 mb-3">本周努力累计</h3>
+                    <div class="mb-2 flex justify-between text-sm">
+                        <span>当前总分：<span id="totalScore" class="font-medium">35</span>/70</span>
+                        <span>完成度：<span id="completionRate" class="font-medium">50%</span></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4.5">
+                        <div id="progressBar" class="bg-secondary h-4.5 rounded-full progress-animation" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- 帮助模态框 -->
+    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 m-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">使用帮助</h3>
+                <button id="closeHelpBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4 text-gray-600">
+                <p>1. 选择任务类型，填写你今天为这件事付出的努力和感受的进步</p>
+                <p>2. 提交后，系统会给出AI评分</p>
+                <p>3. 你可以根据自己的感受调整努力程度的分数</p>
+                <p>4. 右侧图表会展示你本周的努力趋势和累计情况</p>
+                <p>5. 坚持记录，见证自己的成长！</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 通知提示 -->
+    <div id="notification" class="fixed bottom-4 right-4 bg-dark text-white px-4 py-2 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center">
+        <i id="notificationIcon" class="fa fa-check-circle mr-2"></i>
+        <span id="notificationMessage">操作成功</span>
+    </div>
+
+    <script>
+        // 初始化变量
+        let currentTaskId = null;
+        let weeklyData = {
+            daily_scores: [],
+            total_score: 0,
+            max_possible: 70
+        };
+        
+        // DOM元素
+        const taskForm = document.getElementById('taskForm');
+        const scoreResult = document.getElementById('scoreResult');
+        const effortScoreEl = document.getElementById('effortScore');
+        const abilityScoreEl = document.getElementById('abilityScore');
+        const userAdjustedScoreEl = document.getElementById('userAdjustedScore');
+        const adjustedScoreValueEl = document.getElementById('adjustedScoreValue');
+        const saveAdjustmentBtn = document.getElementById('saveAdjustment');
+        const totalScoreEl = document.getElementById('totalScore');
+        const completionRateEl = document.getElementById('completionRate');
+        const progressBarEl = document.getElementById('progressBar');
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelpBtn = document.getElementById('closeHelpBtn');
+        const notification = document.getElementById('notification');
+        const notificationIcon = document.getElementById('notificationIcon');
+        const notificationMessage = document.getElementById('notificationMessage');
+        
+        // 帮助模态框控制
+        helpBtn.addEventListener('click', () => {
+            helpModal.classList.remove('hidden');
+        });
+        
+        closeHelpBtn.addEventListener('click', () => {
+            helpModal.classList.add('hidden');
+        });
+        
+        // 点击模态框外部关闭
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                helpModal.classList.add('hidden');
+            }
+        });
+        
+        // 显示通知
+        function showNotification(message, isSuccess = true) {
+            notificationMessage.textContent = message;
+            notificationIcon.className = isSuccess ? 'fa fa-check-circle mr-2' : 'fa fa-exclamation-circle mr-2';
+            notification.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                notification.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+        
+        // 任务表单提交
+        taskForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                task_type: document.getElementById('taskType').value,
+                effort_description: document.getElementById('effortDescription').value,
+                ability_description: document.getElementById('abilityDescription').value
+            };
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/submit-task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('提交失败');
+                }
+                
+                const data = await response.json();
+                currentTaskId = data.task_id;
+                
+                // 显示评分结果
+                effortScoreEl.textContent = `${data.effort_score}分`;
+                abilityScoreEl.textContent = `${data.ability_score}分`;
+                userAdjustedScoreEl.value = data.effort_score;
+                adjustedScoreValueEl.textContent = data.effort_score;
+                scoreResult.classList.remove('hidden');
+                
+                // 滚动到评分结果
+                scoreResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // 更新图表
+                fetchWeeklyData();
+                
+                showNotification('任务提交成功，已获取AI评分');
+            } catch (error) {
+                showNotification('提交失败，请重试', false);
+                console.error('Error:', error);
+            }
+        });
+        
+        // 调整分数显示
+        userAdjustedScoreEl.addEventListener('input', () => {
+            adjustedScoreValueEl.textContent = userAdjustedScoreEl.value;
+        });
+        
+        // 保存调整后的分数
+        saveAdjustmentBtn.addEventListener('click', async () => {
+            if (!currentTaskId) {
+                showNotification('请先提交任务', false);
+                return;
+            }
+            
+            const adjustedScore = parseInt(userAdjustedScoreEl.value);
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/adjust-score', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        task_id: currentTaskId,
+                        adjusted_score: adjustedScore
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('调整失败');
+                }
+                
+                // 更新图表
+                fetchWeeklyData();
+                
+                showNotification('分数调整已保存');
+            } catch (error) {
+                showNotification('调整失败，请重试', false);
+                console.error('Error:', error);
+            }
+        });
+        
+        // 获取本周数据
+        async function fetchWeeklyData() {
+            try {
+                const response = await fetch('http://localhost:5000/api/weekly-data');
+                
+                if (!response.ok) {
+                    throw new Error('获取数据失败');
+                }
+                
+                weeklyData = await response.json();
+                updateVisualizations();
+            } catch (error) {
+                console.error('Error fetching weekly data:', error);
+                showNotification('获取数据失败，请重试', false);
+            }
+        }
+        
+        // 更新可视化图表
+        function updateVisualizations() {
+            // 更新累计分数和进度条
+            totalScoreEl.textContent = weeklyData.total_score;
+            const completionRate = Math.round((weeklyData.total_score / weeklyData.max_possible) * 100);
+            completionRateEl.textContent = `${completionRate}%`;
+            progressBarEl.style.width = `${completionRate}%`;
+            
+            // 更新周趋势图
+            updateWeeklyTrendChart();
+        }
+        
+        // 周趋势图
+        let weeklyChart = null;
+        function updateWeeklyTrendChart() {
+            const ctx = document.getElementById('weeklyTrendChart').getContext('2d');
+            
+            // 准备数据
+            const labels = weeklyData.daily_scores.map(item => item.day);
+            const scores = weeklyData.daily_scores.map(item => item.score);
+            
+            // 如果图表已存在，先销毁
+            if (weeklyChart) {
+                weeklyChart.destroy();
+            }
+            
+            // 创建新图表
+            weeklyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '每日努力分数',
+                        data: scores,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#3B82F6',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 10,
+                            ticks: {
+                                stepSize: 2
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                            padding: 10,
+                            titleFont: {
+                                size: 14
+                            },
+                            bodyFont: {
+                                size: 13
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return `努力分数: ${context.raw}分`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+        
+        // 页面加载时获取数据
+        window.addEventListener('load', () => {
+            fetchWeeklyData();
+        });
+    </script>
+</body>
+</html>
+  
