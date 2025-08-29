@@ -398,8 +398,8 @@
             const ctx = document.getElementById('weeklyTrendChart').getContext('2d');
             
             // 准备数据
-            const labels = weeklyData.daily_scores.map(item => item.day);
-            const scores = weeklyData.daily_scores.map(item => item.score);
+            const labels = weeklyData.daily_tasks.map(item => item.day);
+            const scores = weeklyData.daily_tasks.map(item => item.total_score);
             
             // 如果图表已存在，先销毁
             if (weeklyChart) {
