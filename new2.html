@@ -18,7 +18,11 @@
                         secondary: '#10B981',
                         accent: '#F59E0B',
                         dark: '#1F2937',
-                        light: '#F3F4F6'
+                        light: '#F3F4F6',
+                        study: '#3B82F6',       // 学习类
+                        work: '#10B981',        // 工作类
+                        health: '#F59E0B',      // 健康类
+                        other: '#8B5CF6'        // 其他类
                     },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -74,10 +78,18 @@
             <!-- 任务输入卡片 -->
             <div class="bg-white rounded-xl shadow-lg p-6 transform transition duration-300 hover:shadow-xl">
                 <h2 class="text-xl font-bold text-dark mb-4 flex items-center">
-                    <i class="fa fa-tasks text-primary mr-2"></i>记录今日任务
+                    <i class="fa fa-tasks text-primary mr-2"></i>记录任务
                 </h2>
                 
                 <form id="taskForm" class="space-y-4">
+                    <!-- 日期选择 -->
+                    <div>
+                        <label for="taskDate" class="block text-sm font-medium text-gray-700 mb-1">任务日期</label>
+                        <input type="date" id="taskDate" name="taskDate" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out">
+                        <p id="taskCountInfo" class="mt-1 text-xs text-gray-500">今日可记录任务: 3/3</p>
+                    </div>
+                    
                     <!-- 任务类型选择 -->
                     <div>
                         <label for="taskType" class="block text-sm font-medium text-gray-700 mb-1">任务类型</label>
@@ -114,7 +126,7 @@
                     <!-- 努力描述 -->
                     <div>
                         <label for="effortDescription" class="block text-sm font-medium text-gray-700 mb-1">
-                            今天为这件事花了多久 / 做了什么？
+                            为这件事花了多久 / 做了什么？
                         </label>
                         <input type="text" id="effortDescription" name="effortDescription" required
                             placeholder="例如：花1小时背完30个单词"
@@ -175,11 +187,62 @@
                     <i class="fa fa-bar-chart text-primary mr-2"></i>你的努力趋势
                 </h2>
                 
-                <!-- 周努力趋势图 -->
+                <!-- 周选择器 -->
+                <div class="mb-6">
+                    <label for="weekSelector" class="block text-sm font-medium text-gray-700 mb-1">选择日期查看当周趋势：</label>
+                    <input type="date" id="weekSelector" 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out">
+                </div>
+                
+                <!-- 大类和小类筛选器 -->
+                <div class="mb-6 grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="mainCategorySelector" class="block text-sm font-medium text-gray-700 mb-1">选择大类：</label>
+                        <select id="mainCategorySelector" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out">
+                            <option value="" disabled selected>请选择大类</option>
+                            <option value="学习">学习</option>
+                            <option value="工作">工作</option>
+                            <option value="健康">健康</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    
+                    <div id="subtypeSelectorContainer" class="hidden">
+                        <label for="subtypeSelector" class="block text-sm font-medium text-gray-700 mb-1">选择小类：</label>
+                        <select id="subtypeSelector" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition duration-150 ease-in-out">
+                            <option value="all" selected>所有小类</option>
+                            <!-- 小类选项将通过JS动态填充 -->
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- 周努力趋势图 - 支持大类和小类筛选 -->
                 <div class="mb-8">
-                    <h3 class="font-semibold text-gray-800 mb-3">本周努力趋势</h3>
+                    <h3 id="chartTitle" class="font-semibold text-gray-800 mb-3">本周努力趋势</h3>
                     <div class="h-64">
                         <canvas id="weeklyTrendChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 小类统计汇总 -->
+                <div id="subtypeSummaryContainer" class="mb-6 hidden">
+                    <h3 class="font-semibold text-gray-800 mb-3">小类统计汇总</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="subtypeSummary">
+                        <!-- 小类统计内容将通过JS动态填充 -->
+                    </div>
+                </div>
+                
+                <!-- 周目标设置 -->
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-3">设置本周努力目标</h3>
+                    <div class="flex items-center space-x-2">
+                        <input type="number" id="weeklyGoalInput" min="10" max="200" value="70" 
+                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        <button id="setWeeklyGoalBtn" class="bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-lg transition duration-150 ease-in-out">
+                            保存目标
+                        </button>
                     </div>
                 </div>
                 
@@ -187,16 +250,31 @@
                 <div>
                     <h3 class="font-semibold text-gray-800 mb-3">本周努力累计</h3>
                     <div class="mb-2 flex justify-between text-sm">
-                        <span>当前总分：<span id="totalScore" class="font-medium">35</span>/70</span>
-                        <span>完成度：<span id="completionRate" class="font-medium">50%</span></span>
+                        <span>当前总分：<span id="totalScore" class="font-medium">0</span>/<span id="goalScore" class="font-medium">70</span></span>
+                        <span>完成度：<span id="completionRate" class="font-medium">0%</span></span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-4.5">
-                        <div id="progressBar" class="bg-secondary h-4.5 rounded-full progress-animation" style="width: 50%"></div>
+                        <div id="progressBar" class="bg-secondary h-4.5 rounded-full progress-animation" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
         </div>
     </main>
+    
+    <!-- 任务详情模态框 -->
+    <div id="taskDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg max-w-md w-full p-6 m-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">任务详情</h3>
+                <button id="closeTaskDetailBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4 text-gray-600" id="taskDetailContent">
+                <!-- 任务详情内容将通过JS动态填充 -->
+            </div>
+        </div>
+    </div>
     
     <!-- 帮助模态框 -->
     <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
@@ -208,11 +286,13 @@
                 </button>
             </div>
             <div class="space-y-4 text-gray-600">
-                <p>1. 选择任务类型，填写你今天为这件事付出的努力和感受的进步</p>
-                <p>2. 提交后，系统会给出AI评分</p>
-                <p>3. 你可以根据自己的感受调整努力程度的分数</p>
-                <p>4. 右侧图表会展示你本周的努力趋势和累计情况</p>
-                <p>5. 坚持记录，见证自己的成长！</p>
+                <p>1. 选择任务日期和类型，填写你为这件事付出的努力和感受的进步</p>
+                <p>2. 每天最多可以记录3个任务</p>
+                <p>3. 提交后，系统会给出AI评分，你也可以根据自己的感受调整分数</p>
+                <p>4. 右侧图表会展示你所选日期所在周的努力趋势，不同类型任务用不同颜色表示</p>
+                <p>5. 你可以选择大类和小类，查看更细致的努力统计</p>
+                <p>6. 你可以设置本周的努力目标，进度条会显示完成情况</p>
+                <p>7. 点击图表上的点可以查看具体任务详情</p>
             </div>
         </div>
     </div>
@@ -224,16 +304,72 @@
     </div>
 
     <script>
-        // 初始化变量
+        // 初始化变量 - 确保初始值为0
         let currentTaskId = null;
         let weeklyData = {
-            daily_scores: [],
-            total_score: 0,
-            max_possible: 70
+            start_of_week: '',
+            end_of_week: '',
+            daily_tasks: [],
+            total_score: 0,  // 明确初始化为0
+            goal_score: 70
+        };
+        
+        // 小类统计数据
+        let subtypeData = {
+            main_category: '',
+            subtypes: [],
+            daily_data: [],
+            subtype_summary: {}
+        };
+        
+        // 任务类型颜色映射 - 大类和小类
+        const categoryColorMap = {
+            '学习': { 
+                color: '#3B82F6',
+                bgColor: 'rgba(59, 130, 246, 0.2)',
+                subtypes: {
+                    '背单词': 'rgba(59, 130, 246, 0.7)',
+                    '阅读': 'rgba(37, 99, 235, 0.7)',
+                    '写作': 'rgba(29, 78, 216, 0.7)',
+                    '编程': 'rgba(30, 64, 175, 0.7)',
+                    '复习': 'rgba(22, 49, 122, 0.7)'
+                }
+            },
+            '工作': { 
+                color: '#10B981',
+                bgColor: 'rgba(16, 185, 129, 0.2)',
+                subtypes: {
+                    '写报告': 'rgba(16, 185, 129, 0.7)',
+                    '会议': 'rgba(5, 150, 105, 0.7)',
+                    '项目开发': 'rgba(4, 120, 87, 0.7)',
+                    '客户沟通': 'rgba(6, 95, 70, 0.7)'
+                }
+            },
+            '健康': { 
+                color: '#F59E0B',
+                bgColor: 'rgba(245, 158, 11, 0.2)',
+                subtypes: {
+                    '跑步': 'rgba(245, 158, 11, 0.7)',
+                    '健身': 'rgba(234, 179, 8, 0.7)',
+                    '瑜伽': 'rgba(217, 119, 6, 0.7)',
+                    '冥想': 'rgba(194, 65, 12, 0.7)'
+                }
+            },
+            '其他': { 
+                color: '#8B5CF6',
+                bgColor: 'rgba(139, 92, 246, 0.2)',
+                subtypes: {
+                    '家务': 'rgba(139, 92, 246, 0.7)',
+                    '兴趣爱好': 'rgba(124, 58, 237, 0.7)',
+                    '志愿服务': 'rgba(109, 40, 217, 0.7)'
+                }
+            }
         };
         
         // DOM元素
         const taskForm = document.getElementById('taskForm');
+        const taskDateInput = document.getElementById('taskDate');
+        const taskCountInfo = document.getElementById('taskCountInfo');
         const scoreResult = document.getElementById('scoreResult');
         const effortScoreEl = document.getElementById('effortScore');
         const abilityScoreEl = document.getElementById('abilityScore');
@@ -241,6 +377,7 @@
         const adjustedScoreValueEl = document.getElementById('adjustedScoreValue');
         const saveAdjustmentBtn = document.getElementById('saveAdjustment');
         const totalScoreEl = document.getElementById('totalScore');
+        const goalScoreEl = document.getElementById('goalScore');
         const completionRateEl = document.getElementById('completionRate');
         const progressBarEl = document.getElementById('progressBar');
         const helpBtn = document.getElementById('helpBtn');
@@ -249,6 +386,75 @@
         const notification = document.getElementById('notification');
         const notificationIcon = document.getElementById('notificationIcon');
         const notificationMessage = document.getElementById('notificationMessage');
+        const weekSelector = document.getElementById('weekSelector');
+        const weeklyGoalInput = document.getElementById('weeklyGoalInput');
+        const setWeeklyGoalBtn = document.getElementById('setWeeklyGoalBtn');
+        const taskDetailModal = document.getElementById('taskDetailModal');
+        const closeTaskDetailBtn = document.getElementById('closeTaskDetailBtn');
+        const taskDetailContent = document.getElementById('taskDetailContent');
+        const mainCategorySelector = document.getElementById('mainCategorySelector');
+        const subtypeSelectorContainer = document.getElementById('subtypeSelectorContainer');
+        const subtypeSelector = document.getElementById('subtypeSelector');
+        const subtypeSummaryContainer = document.getElementById('subtypeSummaryContainer');
+        const subtypeSummary = document.getElementById('subtypeSummary');
+        const chartTitle = document.getElementById('chartTitle');
+        
+        // 初始化日期选择器
+        function initDatePickers() {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            // 设置默认日期为今天
+            taskDateInput.value = todayStr;
+            weekSelector.value = todayStr;
+            
+            // 计算日期范围（当前日期前后两周）
+            const minDate = new Date(today);
+            minDate.setDate(today.getDate() - 14);
+            const maxDate = new Date(today);
+            maxDate.setDate(today.getDate() + 14);
+            
+            const minDateStr = minDate.toISOString().split('T')[0];
+            const maxDateStr = maxDate.toISOString().split('T')[0];
+            
+            // 设置日期选择器范围
+            taskDateInput.min = minDateStr;
+            taskDateInput.max = maxDateStr;
+            weekSelector.min = minDateStr;
+            weekSelector.max = maxDateStr;
+            
+            // 初始检查任务数量
+            checkTaskCount(todayStr);
+        }
+        
+        // 检查当天任务数量
+        async function checkTaskCount(date) {
+            try {
+                const response = await fetch(`http://localhost:5000/api/weekly-data?date=${date}`);
+                if (!response.ok) throw new Error('获取数据失败');
+                
+                const data = await response.json();
+                const dayData = data.daily_tasks.find(d => d.date === date);
+                const taskCount = dayData ? dayData.tasks.length : 0;
+                const remaining = 3 - taskCount;
+                
+                taskCountInfo.textContent = `今日可记录任务: ${remaining}/3`;
+                
+                // 如果达到上限，禁用表单提交
+                const submitBtn = taskForm.querySelector('button[type="submit"]');
+                if (remaining <= 0) {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    taskCountInfo.classList.add('text-red-500');
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    taskCountInfo.classList.remove('text-red-500');
+                }
+            } catch (error) {
+                console.error('检查任务数量失败:', error);
+            }
+        }
         
         // 帮助模态框控制
         helpBtn.addEventListener('click', () => {
@@ -259,10 +465,20 @@
             helpModal.classList.add('hidden');
         });
         
-        // 点击模态框外部关闭
         helpModal.addEventListener('click', (e) => {
             if (e.target === helpModal) {
                 helpModal.classList.add('hidden');
+            }
+        });
+        
+        // 任务详情模态框控制
+        closeTaskDetailBtn.addEventListener('click', () => {
+            taskDetailModal.classList.add('hidden');
+        });
+        
+        taskDetailModal.addEventListener('click', (e) => {
+            if (e.target === taskDetailModal) {
+                taskDetailModal.classList.add('hidden');
             }
         });
         
@@ -284,7 +500,8 @@
             const formData = {
                 task_type: document.getElementById('taskType').value,
                 effort_description: document.getElementById('effortDescription').value,
-                ability_description: document.getElementById('abilityDescription').value
+                ability_description: document.getElementById('abilityDescription').value,
+                date: taskDateInput.value
             };
             
             try {
@@ -297,7 +514,8 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error('提交失败');
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || '提交失败');
                 }
                 
                 const data = await response.json();
@@ -313,12 +531,23 @@
                 // 滚动到评分结果
                 scoreResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 
-                // 更新图表
-                fetchWeeklyData();
+                // 更新图表和任务计数
+                fetchWeeklyData(weekSelector.value);
+                
+                // 如果有选中的大类，同时更新小类数据
+                if (mainCategorySelector.value) {
+                    fetchSubtypeData(weekSelector.value, mainCategorySelector.value);
+                }
+                
+                checkTaskCount(taskDateInput.value);
+                
+                // 重置表单
+                taskForm.reset();
+                taskDateInput.value = formData.date;
                 
                 showNotification('任务提交成功，已获取AI评分');
             } catch (error) {
-                showNotification('提交失败，请重试', false);
+                showNotification(error.message, false);
                 console.error('Error:', error);
             }
         });
@@ -354,7 +583,12 @@
                 }
                 
                 // 更新图表
-                fetchWeeklyData();
+                fetchWeeklyData(weekSelector.value);
+                
+                // 如果有选中的大类，同时更新小类数据
+                if (mainCategorySelector.value) {
+                    fetchSubtypeData(weekSelector.value, mainCategorySelector.value);
+                }
                 
                 showNotification('分数调整已保存');
             } catch (error) {
@@ -363,47 +597,319 @@
             }
         });
         
-        // 获取本周数据
-        async function fetchWeeklyData() {
+        // 设置周目标
+        setWeeklyGoalBtn.addEventListener('click', async () => {
+            const goalScore = parseInt(weeklyGoalInput.value);
+            if (!goalScore || goalScore < 10 || goalScore > 200) {
+                showNotification('目标分数必须在10-200之间', false);
+                return;
+            }
+            
             try {
-                const response = await fetch('http://localhost:5000/api/weekly-data');
+                const response = await fetch('http://localhost:5000/api/set-weekly-goal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        goal_score: goalScore,
+                        date: weekSelector.value
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('设置目标失败');
+                }
+                
+                // 更新图表
+                fetchWeeklyData(weekSelector.value);
+                
+                // 如果有选中的大类，同时更新小类数据
+                if (mainCategorySelector.value) {
+                    fetchSubtypeData(weekSelector.value, mainCategorySelector.value);
+                }
+                
+                showNotification(`本周目标已设置为${goalScore}分`);
+            } catch (error) {
+                showNotification('设置目标失败，请重试', false);
+                console.error('Error:', error);
+            }
+        });
+        
+        // 周选择器变化时更新数据
+        weekSelector.addEventListener('change', () => {
+            fetchWeeklyData(weekSelector.value);
+            
+            // 如果有选中的大类，同时更新小类数据
+            if (mainCategorySelector.value) {
+                fetchSubtypeData(weekSelector.value, mainCategorySelector.value);
+            }
+        });
+        
+        // 大类选择器变化时更新小类数据
+        mainCategorySelector.addEventListener('change', () => {
+            const mainCategory = mainCategorySelector.value;
+            
+            if (mainCategory) {
+                // 显示小类选择器
+                subtypeSelectorContainer.classList.remove('hidden');
+                
+                // 清空并重新填充小类选择器
+                // 保留"所有小类"选项
+                const allOption = subtypeSelector.querySelector('option[value="all"]');
+                subtypeSelector.innerHTML = '';
+                subtypeSelector.appendChild(allOption);
+                
+                // 获取该大类下的所有小类
+                const categoryInfo = categoryColorMap[mainCategory];
+                if (categoryInfo && categoryInfo.subtypes) {
+                    Object.keys(categoryInfo.subtypes).forEach(subtype => {
+                        const option = document.createElement('option');
+                        option.value = subtype;
+                        option.textContent = subtype;
+                        subtypeSelector.appendChild(option);
+                    });
+                }
+                
+                // 获取该大类的小类数据
+                fetchSubtypeData(weekSelector.value, mainCategory);
+                
+                // 更新图表标题
+                chartTitle.textContent = `${mainCategory}类本周努力趋势`;
+            } else {
+                // 隐藏小类选择器和汇总信息
+                subtypeSelectorContainer.classList.add('hidden');
+                subtypeSummaryContainer.classList.add('hidden');
+                
+                // 显示大类趋势图
+                updateWeeklyTrendChart();
+                
+                // 恢复图表标题
+                chartTitle.textContent = '本周努力趋势';
+            }
+        });
+        
+        // 小类选择器变化时更新图表
+        subtypeSelector.addEventListener('change', () => {
+            if (mainCategorySelector.value) {
+                updateSubtypeChart();
+            }
+        });
+        
+        // 任务日期变化时检查任务数量
+        taskDateInput.addEventListener('change', () => {
+            checkTaskCount(taskDateInput.value);
+        });
+        
+        // 获取本周数据
+        async function fetchWeeklyData(date) {
+            try {
+                // 显示加载状态
+                totalScoreEl.textContent = '加载中...';
+                completionRateEl.textContent = '加载中...';
+                
+                const response = await fetch(`http://localhost:5000/api/weekly-data?date=${date}`);
                 
                 if (!response.ok) {
                     throw new Error('获取数据失败');
                 }
                 
-                weeklyData = await response.json();
-                updateVisualizations();
+                const data = await response.json();
+                // 确保total_score为数字，无数据时为0
+                weeklyData = {
+                    ...data,
+                    total_score: Number(data.total_score) || 0
+                };
+                
+                // 更新周目标输入框
+                weeklyGoalInput.value = weeklyData.goal_score;
+                
+                // 如果没有选中大类，更新大类趋势图
+                if (!mainCategorySelector.value) {
+                    updateWeeklyTrendChart();
+                }
+                
+                updateProgressInfo();
             } catch (error) {
-                console.error('Error fetching weekly data:', error);
+                console.error('获取周数据失败:', error);
                 showNotification('获取数据失败，请重试', false);
+                // 错误情况下确保显示0
+                weeklyData.total_score = 0;
+                weeklyData.goal_score = 70;
+                updateProgressInfo();
             }
         }
         
-        // 更新可视化图表
-        function updateVisualizations() {
-            // 更新累计分数和进度条
-            totalScoreEl.textContent = weeklyData.total_score;
-            const completionRate = Math.round((weeklyData.total_score / weeklyData.max_possible) * 100);
-            completionRateEl.textContent = `${completionRate}%`;
-            progressBarEl.style.width = `${completionRate}%`;
-            
-            // 更新周趋势图
-            updateWeeklyTrendChart();
+        // 获取小类数据
+        async function fetchSubtypeData(date, mainCategory) {
+            try {
+                const response = await fetch(
+                    `http://localhost:5000/api/weekly-data-by-subtype?date=${date}&main_category=${encodeURIComponent(mainCategory)}`
+                );
+                
+                if (!response.ok) {
+                    throw new Error('获取小类数据失败');
+                }
+                
+                subtypeData = await response.json();
+                
+                // 更新小类统计汇总
+                updateSubtypeSummary();
+                
+                // 更新小类图表
+                updateSubtypeChart();
+                
+            } catch (error) {
+                console.error('获取小类数据失败:', error);
+                showNotification('获取分类数据失败，请重试', false);
+            }
         }
         
-        // 周趋势图
+        // 更新进度信息
+        function updateProgressInfo() {
+            // 更新累计分数和进度条 - 确保无数据时显示0
+            totalScoreEl.textContent = weeklyData.total_score || 0;
+            goalScoreEl.textContent = weeklyData.goal_score || 70;
+            
+            // 防止除以0错误
+            const goalScore = weeklyData.goal_score || 70;
+            const completionRate = goalScore > 0 
+                ? Math.min(100, Math.round((weeklyData.total_score / goalScore) * 100)) 
+                : 0;
+                
+            completionRateEl.textContent = `${completionRate}%`;
+            progressBarEl.style.width = `${completionRate}%`;
+        }
+        
+        // 周趋势图 - 大类
         let weeklyChart = null;
         function updateWeeklyTrendChart() {
             const ctx = document.getElementById('weeklyTrendChart').getContext('2d');
             
             // 准备数据
             const labels = weeklyData.daily_tasks.map(item => item.day);
-            const scores = weeklyData.daily_tasks.map(item => item.total_score);
             
             // 如果图表已存在，先销毁
             if (weeklyChart) {
                 weeklyChart.destroy();
+            }
+            
+            // 按任务类型准备数据集
+            const datasets = [];
+            const typeSet = new Set();
+            
+            // 收集所有任务类型
+            weeklyData.daily_tasks.forEach(day => {
+                day.tasks.forEach(task => {
+                    const typePrefix = task.task_type.split(' - ')[0];
+                    typeSet.add(typePrefix);
+                });
+            });
+            
+            // 为每种类型创建数据集
+            Array.from(typeSet).forEach(type => {
+                const colorInfo = categoryColorMap[type] || { 
+                    color: '#6B7280', 
+                    bgColor: 'rgba(107, 114, 128, 0.2)',
+                    subtypes: {}
+                };
+                
+                // 为每天创建数据点
+                const data = weeklyData.daily_tasks.map(day => {
+                    const tasksOfType = day.tasks.filter(
+                        task => task.task_type.split(' - ')[0] === type
+                    );
+                    return tasksOfType.length > 0 ? tasksOfType : null;
+                });
+                
+                datasets.push({
+                    label: type,
+                    data: data.map(item => item ? item[0].score : null), // 基础数据点
+                    borderColor: colorInfo.color,
+                    backgroundColor: colorInfo.bgColor,
+                    borderWidth: 2,
+                    pointBackgroundColor: colorInfo.color,
+                    pointBorderColor: '#fff',
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    tension: 0.3,
+                    // 存储原始任务数据用于 tooltip
+                    tasksData: data
+                });
+            });
+            
+            // 创建新图表
+            weeklyChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: getChartOptions()
+            });
+        }
+        
+        // 小类趋势图
+        function updateSubtypeChart() {
+            const ctx = document.getElementById('weeklyTrendChart').getContext('2d');
+            const selectedSubtype = subtypeSelector.value;
+            const mainCategory = mainCategorySelector.value;
+            
+            // 准备数据
+            const labels = subtypeData.daily_data.map(item => item.day);
+            
+            // 如果图表已存在，先销毁
+            if (weeklyChart) {
+                weeklyChart.destroy();
+            }
+            
+            // 按小类准备数据集
+            const datasets = [];
+            const colorInfo = categoryColorMap[mainCategory] || { 
+                color: '#6B7280', 
+                bgColor: 'rgba(107, 114, 128, 0.2)',
+                subtypes: {}
+            };
+            
+            // 如果选择了特定小类，只显示该小类数据
+            if (selectedSubtype !== 'all' && subtypeData.subtypes.includes(selectedSubtype)) {
+                const data = subtypeData.daily_data.map(day => 
+                    day.subtype_scores[selectedSubtype] || 0
+                );
+                
+                datasets.push({
+                    label: selectedSubtype,
+                    data: data,
+                    borderColor: colorInfo.subtypes[selectedSubtype] || colorInfo.color,
+                    backgroundColor: colorInfo.bgColor,
+                    borderWidth: 2,
+                    pointBackgroundColor: colorInfo.subtypes[selectedSubtype] || colorInfo.color,
+                    pointBorderColor: '#fff',
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    tension: 0.3
+                });
+            } 
+            // 显示所有小类数据
+            else {
+                subtypeData.subtypes.forEach(subtype => {
+                    const data = subtypeData.daily_data.map(day => 
+                        day.subtype_scores[subtype] || 0
+                    );
+                    
+                    datasets.push({
+                        label: subtype,
+                        data: data,
+                        borderColor: colorInfo.subtypes[subtype] || colorInfo.color,
+                        backgroundColor: colorInfo.bgColor,
+                        borderWidth: 2,
+                        pointBackgroundColor: colorInfo.subtypes[subtype] || colorInfo.color,
+                        pointBorderColor: '#fff',
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        tension: 0.3
+                    });
+                });
             }
             
             // 创建新图表
@@ -411,64 +917,129 @@
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: '每日努力分数',
-                        data: scores,
-                        borderColor: '#3B82F6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#3B82F6',
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        tension: 0.3,
-                        fill: true
-                    }]
+                    datasets: datasets
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 10,
-                            ticks: {
-                                stepSize: 2
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(31, 41, 55, 0.9)',
-                            padding: 10,
-                            titleFont: {
-                                size: 14
-                            },
-                            bodyFont: {
-                                size: 13
-                            },
-                            callbacks: {
-                                label: function(context) {
-                                    return `努力分数: ${context.raw}分`;
-                                }
-                            }
-                        }
-                    },
-                    animation: {
-                        duration: 1000,
-                        easing: 'easeOutQuart'
-                    }
-                }
+                options: getChartOptions()
             });
         }
         
-        // 页面加载时获取数据
+        // 更新小类统计汇总
+        function updateSubtypeSummary() {
+            if (subtypeData.subtypes.length === 0) {
+                subtypeSummaryContainer.classList.add('hidden');
+                return;
+            }
+            
+            // 显示汇总容器
+            subtypeSummaryContainer.classList.remove('hidden');
+            subtypeSummary.innerHTML = '';
+            
+            const mainCategory = mainCategorySelector.value;
+            const colorInfo = categoryColorMap[mainCategory] || { 
+                color: '#6B7280', 
+                bgColor: 'rgba(107, 114, 128, 0.2)',
+                subtypes: {}
+            };
+            
+            // 为每个小类创建统计卡片
+            Object.keys(subtypeData.subtype_summary).forEach(subtype => {
+                const summary = subtypeData.subtype_summary[subtype];
+                const color = colorInfo.subtypes[subtype] || colorInfo.color;
+                
+                const card = document.createElement('div');
+                card.className = 'bg-gray-50 p-3 rounded-lg border-l-4';
+                card.style.borderLeftColor = color;
+                
+                card.innerHTML = `
+                    <div class="font-medium">${subtype}</div>
+                    <div class="text-sm text-gray-600">
+                        总分: ${summary.total_score}分 | 
+                        平均分: ${summary.avg_score}分 | 
+                        次数: ${summary.task_count}
+                    </div>
+                `;
+                
+                subtypeSummary.appendChild(card);
+            });
+        }
+        
+        // 图表通用配置
+        function getChartOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        ticks: {
+                            stepSize: 2
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 6
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(31, 41, 55, 0.9)',
+                        padding: 10,
+                        titleFont: {
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 13
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeOutQuart'
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                }
+            };
+        }
+        
+        // 显示任务详情
+        function showTaskDetails(dayData, tasks) {
+            let html = `<p><strong>${dayData.day} (${dayData.date})</strong></p>`;
+            html += '<ul class="list-disc pl-5 space-y-2">';
+            
+            tasks.forEach(task => {
+                const typePrefix = task.task_type.split(' - ')[0];
+                const colorInfo = typeColorMap[typePrefix] || { border: '#6B7280' };
+                
+                html += `
+                    <li>
+                        <span style="color: ${colorInfo.border}; font-weight: 500;">${task.task_type}</span>
+                        <div>分数: ${task.score}分</div>
+                        <div class="text-sm mt-1">${task.description}</div>
+                    </li>
+                `;
+            });
+            
+            html += '</ul>';
+            taskDetailContent.innerHTML = html;
+            taskDetailModal.classList.remove('hidden');
+        }
+        
+        // 页面加载时初始化 - 确保初始显示0
         window.addEventListener('load', () => {
-            fetchWeeklyData();
+            // 强制初始显示0
+            totalScoreEl.textContent = '0';
+            completionRateEl.textContent = '0%';
+            progressBarEl.style.width = '0%';
+            
+            initDatePickers();
+            fetchWeeklyData(weekSelector.value);
         });
     </script>
 </body>
 </html>
-  
